@@ -82,7 +82,7 @@ public class ActivityProviderServiceImpl implements ActivityInfoProviderService 
         boolean isIfModifiedSinceSet = false;
         boolean isSinceSet = false;
         if (log.isDebugEnabled()) {
-            log.debug("getActivities since" + since + " , offset:" + offset + " ,limit:" + limit + " ,ifModifiedSince"
+            log.debug("getActivities since " + since + " , offset:" + offset + " ,limit:" + limit + " ,ifModifiedSince"
                     + ifModifiedSince);
         }
         RequestValidationUtil.validatePaginationParameters(offset, limit);
@@ -115,6 +115,7 @@ public class ActivityProviderServiceImpl implements ActivityInfoProviderService 
         }
 
         if (timestamp == 0) {
+            //If timestamp is not sent by the user, a default value is set, that is equal to current time - 12 hours.
             long time = System.currentTimeMillis() / 1000;
             timestamp = time - 42300;
         }
