@@ -81,8 +81,8 @@ public class ActivityProviderServiceImpl implements ActivityInfoProviderService 
         long timestamp = 0;
         boolean isIfModifiedSinceSet = false;
         boolean isSinceSet = false;
-        if(log.isDebugEnabled()) {
-            log.debug("getActivities since" + since + " , offset:"+ offset + " ,limit:" + limit + " ,ifModifiedSince"
+        if (log.isDebugEnabled()) {
+            log.debug("getActivities since" + since + " , offset:" + offset + " ,limit:" + limit + " ,ifModifiedSince"
                     + ifModifiedSince);
         }
         RequestValidationUtil.validatePaginationParameters(offset, limit);
@@ -114,11 +114,11 @@ public class ActivityProviderServiceImpl implements ActivityInfoProviderService 
             timestamp = sinceTimestamp / 1000;
         }
 
-        if (timestamp == 0){
-            long time = System.currentTimeMillis()/1000;
+        if (timestamp == 0) {
+            long time = System.currentTimeMillis() / 1000;
             timestamp = time - 42300;
         }
-        if(log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("getActivities final timestamp " + timestamp);
         }
 
@@ -126,17 +126,17 @@ public class ActivityProviderServiceImpl implements ActivityInfoProviderService 
         ActivityList activityList = new ActivityList();
         DeviceManagementProviderService dmService;
         try {
-            if(log.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 log.debug("calling database to get activities");
             }
             dmService = DeviceMgtAPIUtils.getDeviceManagementService();
             activities = dmService.getActivitiesUpdatedAfter(timestamp, limit, offset);
             activityList.setList(activities);
-            if(log.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 log.debug("calling database to get activity count");
             }
             int count = dmService.getActivityCountUpdatedAfter(timestamp);
-            if(log.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 log.debug("Activity count: " + count);
             }
             activityList.setCount(count);
