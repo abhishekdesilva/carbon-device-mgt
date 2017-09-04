@@ -19,6 +19,9 @@ package org.wso2.carbon.device.mgt.common;
 
 public final class DeviceManagementConstants {
 
+    public static final String DM_CACHE_MANAGER = "DM_CACHE_MANAGER";
+    public static final String DEVICE_CACHE = "DEVICE_CACHE";
+
     public static final class DataSourceProperties {
         private DataSourceProperties() {
             throw new AssertionError();

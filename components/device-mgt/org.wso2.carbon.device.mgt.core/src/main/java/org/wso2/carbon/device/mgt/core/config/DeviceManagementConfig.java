@@ -17,6 +17,8 @@
  */
 package org.wso2.carbon.device.mgt.core.config;
 
+import org.wso2.carbon.device.mgt.core.config.cache.CertificateCacheConfiguration;
+import org.wso2.carbon.device.mgt.core.config.cache.DeviceCacheConfiguration;
 import org.wso2.carbon.device.mgt.core.config.identity.IdentityConfigurations;
 import org.wso2.carbon.device.mgt.core.config.pagination.PaginationConfiguration;
 import org.wso2.carbon.device.mgt.core.config.policy.PolicyConfiguration;
@@ -42,7 +44,8 @@ public final class DeviceManagementConfig {
     private PaginationConfiguration paginationConfiguration;
     private List<String> pushNotificationProviders;
     private ArchivalConfiguration archivalConfiguration;
-
+    private DeviceCacheConfiguration deviceCacheConfiguration;
+    private CertificateCacheConfiguration certificateCacheConfiguration;
 
     @XmlElement(name = "ManagementRepository", required = true)
     public DeviceManagementConfigRepository getDeviceManagementConfigRepository() {
@@ -109,5 +112,22 @@ public final class DeviceManagementConfig {
         this.archivalConfiguration = archivalConfiguration;
     }
 
+    @XmlElement(name = "DeviceCacheConfiguration", required = true)
+    public DeviceCacheConfiguration getDeviceCacheConfiguration() {
+        return deviceCacheConfiguration;
+    }
+
+    public void setDeviceCacheConfiguration(DeviceCacheConfiguration deviceCacheConfiguration) {
+        this.deviceCacheConfiguration = deviceCacheConfiguration;
+    }
+
+    @XmlElement(name = "CertificateCacheConfiguration", required = true)
+    public CertificateCacheConfiguration getCertificateCacheConfiguration() {
+        return certificateCacheConfiguration;
+    }
+
+    public void setCertificateCacheConfiguration(CertificateCacheConfiguration certificateCacheConfiguration) {
+        this.certificateCacheConfiguration = certificateCacheConfiguration;
+    }
 }
 
