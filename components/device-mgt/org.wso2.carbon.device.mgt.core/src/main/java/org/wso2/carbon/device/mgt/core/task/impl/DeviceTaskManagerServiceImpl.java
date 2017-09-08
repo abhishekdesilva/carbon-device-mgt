@@ -72,7 +72,6 @@ public class DeviceTaskManagerServiceImpl implements DeviceTaskManagerService {
             Map<String, String> properties = new HashMap<>();
             properties.put(TENANT_ID, String.valueOf(tenantId));
 
-
             if (!taskManager.isTaskScheduled(TASK_NAME)) {
 
                 TaskInfo taskInfo = new TaskInfo(TASK_NAME, deviceTaskManager.getTaskImplementedClazz(),
