@@ -47,7 +47,9 @@ import org.wso2.carbon.device.mgt.core.group.mgt.dao.GroupManagementDAOFactory;
 import org.wso2.carbon.device.mgt.core.notification.mgt.NotificationManagementServiceImpl;
 import org.wso2.carbon.device.mgt.core.notification.mgt.dao.NotificationManagementDAOFactory;
 import org.wso2.carbon.device.mgt.core.operation.mgt.OperationManagerImpl;
+import org.wso2.carbon.device.mgt.core.archival.dao.ArchivalSourceDAOFactory;
 import org.wso2.carbon.device.mgt.core.operation.mgt.dao.OperationManagementDAOFactory;
+import org.wso2.carbon.device.mgt.core.archival.dao.ArchivalDestinationDAOFactory;
 import org.wso2.carbon.device.mgt.core.permission.mgt.PermissionManagerServiceImpl;
 import org.wso2.carbon.device.mgt.core.push.notification.mgt.PushNotificationProviderRepository;
 import org.wso2.carbon.device.mgt.core.service.DeviceManagementProviderService;
@@ -157,6 +159,11 @@ public class DeviceManagementServiceComponent {
 
             /* Initialize Operation Manager */
             this.initOperationsManager();
+
+            /* Initialising data archival configurations */
+            ArchivalSourceDAOFactory.init(dsConfig);
+            DataSourceConfig purgingDSConfig = config.getArchivalConfiguration().getDataSourceConfig();
+            ArchivalDestinationDAOFactory.init(purgingDSConfig);
 
             PushNotificationProviderRepository pushNotificationRepo = new PushNotificationProviderRepository();
             List<String> pushNotificationProviders = config.getPushNotificationProviders();

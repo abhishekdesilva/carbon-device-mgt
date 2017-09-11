@@ -20,6 +20,7 @@ package org.wso2.carbon.device.mgt.core.config;
 import org.wso2.carbon.device.mgt.core.config.identity.IdentityConfigurations;
 import org.wso2.carbon.device.mgt.core.config.pagination.PaginationConfiguration;
 import org.wso2.carbon.device.mgt.core.config.policy.PolicyConfiguration;
+import org.wso2.carbon.device.mgt.core.config.archival.ArchivalConfiguration;
 import org.wso2.carbon.device.mgt.core.config.task.TaskConfiguration;
 
 import javax.xml.bind.annotation.XmlElement;
@@ -40,6 +41,7 @@ public final class DeviceManagementConfig {
     private PolicyConfiguration policyConfiguration;
     private PaginationConfiguration paginationConfiguration;
     private List<String> pushNotificationProviders;
+    private ArchivalConfiguration archivalConfiguration;
 
 
     @XmlElement(name = "ManagementRepository", required = true)
@@ -96,6 +98,15 @@ public final class DeviceManagementConfig {
 
     public void setPaginationConfiguration(PaginationConfiguration paginationConfiguration) {
         this.paginationConfiguration = paginationConfiguration;
+    }
+
+    @XmlElement(name = "ArchivalConfiguration", required = true)
+    public ArchivalConfiguration getArchivalConfiguration() {
+        return archivalConfiguration;
+    }
+
+    public void setArchivalConfiguration(ArchivalConfiguration archivalConfiguration) {
+        this.archivalConfiguration = archivalConfiguration;
     }
 
 }
