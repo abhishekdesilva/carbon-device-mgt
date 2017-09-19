@@ -91,7 +91,7 @@
                 <RetentionPeriod>365</RetentionPeriod>
             </PurgingTask>
         </ArchivalTask>
-    </ArchivalConfiguration>]
+    </ArchivalConfiguration>
     <CertificateKeystore>
         <!-- Certificate Keystore file location-->
         <CertificateKeystoreLocation>${carbon.home}/repository/resources/security/wso2certs.jks</CertificateKeystoreLocation>
