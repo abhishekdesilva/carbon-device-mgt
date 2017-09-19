@@ -21,13 +21,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.certificate.mgt.core.cache.CertificateCacheManager;
 import org.wso2.carbon.certificate.mgt.core.cache.impl.CertificateCacheManagerImpl;
-import org.wso2.carbon.certificate.mgt.core.config.CertificateConfigurationManager;
-import org.wso2.carbon.certificate.mgt.core.config.CertificateKeystoreConfig;
 import org.wso2.carbon.certificate.mgt.core.dao.CertificateDAO;
 import org.wso2.carbon.certificate.mgt.core.dao.CertificateManagementDAOException;
 import org.wso2.carbon.certificate.mgt.core.dao.CertificateManagementDAOFactory;
 import org.wso2.carbon.certificate.mgt.core.dto.CertificateResponse;
-import org.wso2.carbon.certificate.mgt.core.exception.CertificateManagementException;
 import org.wso2.carbon.certificate.mgt.core.util.ConfigurationUtil;
 import org.wso2.carbon.certificate.mgt.core.exception.KeystoreException;
 import org.wso2.carbon.certificate.mgt.core.util.Serializer;
@@ -135,30 +132,13 @@ public class KeyStoreReader {
 
 
     KeyStore loadCertificateKeyStore() throws KeystoreException {
-        KeyStore keyStore = null;
-        try {
-            CertificateKeystoreConfig certificateKeystoreConfig = CertificateConfigurationManager.getInstance().
-                    getCertificateKeyStoreConfig();
-            keyStore = loadKeyStore(certificateKeystoreConfig.getCertificateKeystoreType(),
-                    certificateKeystoreConfig.getCertificateKeystoreLocation(),
-                    certificateKeystoreConfig.getCertificateKeystorePassword());
-        } catch (CertificateManagementException e) {
-            String errorMsg = "Unable to find KeyStore configuration in certificate-mgt.config file.";
-            throw new KeystoreException(errorMsg, e);
-        }
-        return keyStore;
+        return loadKeyStore(ConfigurationUtil.CERTIFICATE_KEYSTORE, ConfigurationUtil.PATH_CERTIFICATE_KEYSTORE,
+                ConfigurationUtil.CERTIFICATE_KEYSTORE_PASSWORD);
     }
 
     void saveCertificateKeyStore(KeyStore keyStore) throws KeystoreException {
-        try {
-            CertificateKeystoreConfig certificateKeystoreConfig = CertificateConfigurationManager.getInstance().
-                    getCertificateKeyStoreConfig();
-            saveKeyStore(keyStore, certificateKeystoreConfig.getCertificateKeystoreLocation(),
-                    certificateKeystoreConfig.getCertificateKeystorePassword());
-        } catch (CertificateManagementException e) {
-            String errorMsg = "Unable to find KeyStore configuration in certificate-mgt.config file.";
-            throw new KeystoreException(errorMsg, e);
-        }
+        saveKeyStore(keyStore, ConfigurationUtil.PATH_CERTIFICATE_KEYSTORE,
+                ConfigurationUtil.CERTIFICATE_KEYSTORE_PASSWORD);
     }
 
     public Certificate getCACertificate() throws KeystoreException {
@@ -256,10 +236,9 @@ public class KeyStoreReader {
         KeyStore keystore = loadCertificateKeyStore();
         PrivateKey raPrivateKey;
         try {
-            CertificateKeystoreConfig certificateKeystoreConfig = CertificateConfigurationManager.getInstance().
-                    getCertificateKeyStoreConfig();
-            raPrivateKey = (PrivateKey) keystore.getKey(certificateKeystoreConfig.getRACertAlias(),
-                    certificateKeystoreConfig.getRAPrivateKeyPassword().toCharArray());
+            raPrivateKey = (PrivateKey) (keystore.getKey(
+                    ConfigurationUtil.getConfigEntry(ConfigurationUtil.RA_CERT_ALIAS),
+                    ConfigurationUtil.getConfigEntry(ConfigurationUtil.KEYSTORE_RA_CERT_PRIV_PASSWORD).toCharArray()));
         } catch (UnrecoverableKeyException e) {
             String errorMsg = "Key is unrecoverable when retrieving RA private key";
             log.error(errorMsg, e);
@@ -270,9 +249,7 @@ public class KeyStoreReader {
             throw new KeystoreException(errorMsg, e);
         } catch (NoSuchAlgorithmException e) {
             String errorMsg = "Algorithm not found when retrieving RA private key";
-            throw new KeystoreException(errorMsg, e);
-        } catch (CertificateManagementException e) {
-            String errorMsg = "Unable to find KeyStore configuration in certificate-mgt.config file.";
+            log.error(errorMsg, e);
             throw new KeystoreException(errorMsg, e);
         }
 

@@ -27,7 +27,6 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name = "DeviceMgtConfiguration")
 public final class CertificateManagementConfig {
 
-    private CertificateKeystoreConfig certificateKeystoreConfig;
     private int defaultPageSize;
 
     public void setCertificateManagementRepository(CertificateManagementRepository certificateManagementRepository) {
@@ -39,23 +38,5 @@ public final class CertificateManagementConfig {
     @XmlElement(name = "ManagementRepository", nillable = false)
     public CertificateManagementRepository getCertificateManagementRepository() {
         return certificateManagementRepository;
-    }
-
-    @XmlElement(name = "CertificateKeystore", required = true)
-    public CertificateKeystoreConfig getCertificateKeystoreConfig() {
-        return certificateKeystoreConfig;
-    }
-
-    public void setCertificateKeystoreConfig(CertificateKeystoreConfig certificateKeystoreConfig) {
-        this.certificateKeystoreConfig = certificateKeystoreConfig;
-    }
-
-    @XmlElement(name = "DefaultPageSize", required = true)
-    public int getDefaultPageSize() {
-        return defaultPageSize;
-    }
-
-    public void setDefaultPageSize(int defaultPageSize) {
-        this.defaultPageSize = defaultPageSize;
     }
 }
