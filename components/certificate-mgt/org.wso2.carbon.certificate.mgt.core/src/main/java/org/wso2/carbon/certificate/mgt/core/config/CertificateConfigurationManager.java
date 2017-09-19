@@ -73,4 +73,10 @@ public class CertificateConfigurationManager {
         return currentPolicyConfig.getCertificateManagementRepository().getDataSourceConfig();
     }
 
+    public CertificateKeystoreConfig getCertificateKeyStoreConfig() throws CertificateManagementException {
+        if (currentPolicyConfig == null) {
+            initConfig();
+        }
+        return currentPolicyConfig.getCertificateKeystoreConfig();
+    }
 }

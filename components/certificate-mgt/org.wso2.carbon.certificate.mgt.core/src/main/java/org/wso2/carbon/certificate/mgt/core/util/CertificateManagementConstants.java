@@ -22,5 +22,7 @@ package org.wso2.carbon.certificate.mgt.core.util;
 public final class CertificateManagementConstants {
 
     public static final String DEVICE_CONFIG_XML_NAME = "cdm-config.xml";
+    public static final String CARBON_HOME = "carbon.home";
+    public static final String CARBON_HOME_ENTRY = "${carbon.home}";
 
 }

@@ -19,10 +19,15 @@ package org.wso2.carbon.certificate.mgt.core.impl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.certificate.mgt.core.cache.CertificateCacheManager;
+import org.wso2.carbon.certificate.mgt.core.cache.impl.CertificateCacheManagerImpl;
+import org.wso2.carbon.certificate.mgt.core.config.CertificateConfigurationManager;
+import org.wso2.carbon.certificate.mgt.core.config.CertificateKeystoreConfig;
 import org.wso2.carbon.certificate.mgt.core.dao.CertificateDAO;
 import org.wso2.carbon.certificate.mgt.core.dao.CertificateManagementDAOException;
 import org.wso2.carbon.certificate.mgt.core.dao.CertificateManagementDAOFactory;
 import org.wso2.carbon.certificate.mgt.core.dto.CertificateResponse;
+import org.wso2.carbon.certificate.mgt.core.exception.CertificateManagementException;
 import org.wso2.carbon.certificate.mgt.core.util.ConfigurationUtil;
 import org.wso2.carbon.certificate.mgt.core.exception.KeystoreException;
 import org.wso2.carbon.certificate.mgt.core.util.Serializer;
@@ -130,13 +135,30 @@ public class KeyStoreReader {
 
 
     KeyStore loadCertificateKeyStore() throws KeystoreException {
-        return loadKeyStore(ConfigurationUtil.CERTIFICATE_KEYSTORE, ConfigurationUtil.PATH_CERTIFICATE_KEYSTORE,
-                ConfigurationUtil.CERTIFICATE_KEYSTORE_PASSWORD);
+        KeyStore keyStore = null;
+        try {
+            CertificateKeystoreConfig certificateKeystoreConfig = CertificateConfigurationManager.getInstance().
+                    getCertificateKeyStoreConfig();
+            keyStore = loadKeyStore(certificateKeystoreConfig.getCertificateKeystoreType(),
+                    certificateKeystoreConfig.getCertificateKeystoreLocation(),
+                    certificateKeystoreConfig.getCertificateKeystorePassword());
+        } catch (CertificateManagementException e) {
+            String errorMsg = "Unable to find KeyStore configuration in certificate-mgt.config file.";
+            throw new KeystoreException(errorMsg, e);
+        }
+        return keyStore;
     }
 
     void saveCertificateKeyStore(KeyStore keyStore) throws KeystoreException {
-        saveKeyStore(keyStore, ConfigurationUtil.PATH_CERTIFICATE_KEYSTORE,
-                ConfigurationUtil.CERTIFICATE_KEYSTORE_PASSWORD);
+        try {
+            CertificateKeystoreConfig certificateKeystoreConfig = CertificateConfigurationManager.getInstance().
+                    getCertificateKeyStoreConfig();
+            saveKeyStore(keyStore, certificateKeystoreConfig.getCertificateKeystoreLocation(),
+                    certificateKeystoreConfig.getCertificateKeystorePassword());
+        } catch (CertificateManagementException e) {
+            String errorMsg = "Unable to find KeyStore configuration in certificate-mgt.config file.";
+            throw new KeystoreException(errorMsg, e);
+        }
     }
 
     public Certificate getCACertificate() throws KeystoreException {
@@ -234,9 +256,10 @@ public class KeyStoreReader {
         KeyStore keystore = loadCertificateKeyStore();
         PrivateKey raPrivateKey;
         try {
-            raPrivateKey = (PrivateKey) (keystore.getKey(
-                    ConfigurationUtil.getConfigEntry(ConfigurationUtil.RA_CERT_ALIAS),
-                    ConfigurationUtil.getConfigEntry(ConfigurationUtil.KEYSTORE_RA_CERT_PRIV_PASSWORD).toCharArray()));
+            CertificateKeystoreConfig certificateKeystoreConfig = CertificateConfigurationManager.getInstance().
+                    getCertificateKeyStoreConfig();
+            raPrivateKey = (PrivateKey) keystore.getKey(certificateKeystoreConfig.getRACertAlias(),
+                    certificateKeystoreConfig.getRAPrivateKeyPassword().toCharArray());
         } catch (UnrecoverableKeyException e) {
             String errorMsg = "Key is unrecoverable when retrieving RA private key";
             log.error(errorMsg, e);
@@ -247,7 +270,9 @@ public class KeyStoreReader {
             throw new KeystoreException(errorMsg, e);
         } catch (NoSuchAlgorithmException e) {
             String errorMsg = "Algorithm not found when retrieving RA private key";
-            log.error(errorMsg, e);
+            throw new KeystoreException(errorMsg, e);
+        } catch (CertificateManagementException e) {
+            String errorMsg = "Unable to find KeyStore configuration in certificate-mgt.config file.";
             throw new KeystoreException(errorMsg, e);
         }
 
@@ -261,14 +286,26 @@ public class KeyStoreReader {
     public CertificateResponse getCertificateBySerial(String serialNumber) throws KeystoreException {
         CertificateResponse certificateResponse = null;
         try {
-            CertificateManagementDAOFactory.openConnection();
-            certificateResponse = certDao.retrieveCertificate(serialNumber);
-            if (certificateResponse != null && certificateResponse.getCertificate() != null) {
-                Certificate certificate = (Certificate) Serializer.deserialize(certificateResponse.getCertificate());
-                if (certificate instanceof X509Certificate) {
-                    X509Certificate x509cert = (X509Certificate) certificate;
-                    String commonName = CertificateGenerator.getCommonName(x509cert);
-                    certificateResponse.setCommonName(commonName);
+            CertificateCacheManager cacheManager = CertificateCacheManagerImpl.getInstance();
+            certificateResponse = cacheManager.getCertificateBySerial(serialNumber);
+            if (certificateResponse == null) {
+                try {
+                    CertificateManagementDAOFactory.openConnection();
+                    certificateResponse = certDao.retrieveCertificate(serialNumber);
+                } catch (SQLException e) {
+                    String errorMsg = "Error when making a connection to the database.";
+                    throw new KeystoreException(errorMsg, e);
+                } finally {
+                    CertificateManagementDAOFactory.closeConnection();
+                }
+                if (certificateResponse != null && certificateResponse.getCertificate() != null) {
+                    Certificate certificate = (Certificate) Serializer.deserialize(certificateResponse.getCertificate());
+                    if (certificate instanceof X509Certificate) {
+                        X509Certificate x509cert = (X509Certificate) certificate;
+                        String commonName = CertificateGenerator.getCommonName(x509cert);
+                        certificateResponse.setCommonName(commonName);
+                        cacheManager.addCertificateBySerial(serialNumber, certificateResponse);
+                    }
                 }
             }
         } catch (CertificateManagementDAOException e) {
@@ -276,16 +313,10 @@ public class KeyStoreReader {
                     serialNumber;
             log.error(errorMsg, e);
             throw new KeystoreException(errorMsg, e);
-        } catch (SQLException e) {
-            String errorMsg = "Error when making a connection to the database.";
-            log.error(errorMsg, e);
-            throw new KeystoreException(errorMsg, e);
         } catch (ClassNotFoundException | IOException e) {
             String errorMsg = "Error when de-serializing saved certificate.";
             log.error(errorMsg, e);
             throw new KeystoreException(errorMsg, e);
-        } finally {
-            CertificateManagementDAOFactory.closeConnection();
         }
         return certificateResponse;
     }
