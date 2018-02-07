@@ -1088,6 +1088,11 @@ public class DeviceManagementProviderServiceImpl implements DeviceManagementProv
     }
 
     @Override
+    public List<Activity> getOperationByActivityIds(List<String> idList) throws OperationManagementException{
+        return DeviceManagementDataHolder.getInstance().getOperationManager().getOperationByActivityIds(idList);
+    }
+
+    @Override
     public List<Activity> getActivitiesUpdatedAfter(long timestamp) throws OperationManagementException {
         return DeviceManagementDataHolder.getInstance().getOperationManager().getActivitiesUpdatedAfter(timestamp);
     }

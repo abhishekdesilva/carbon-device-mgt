@@ -17,13 +17,19 @@
  */
 package org.wso2.carbon.device.mgt.core.service;
 
-import org.wso2.carbon.device.mgt.common.*;
+import org.wso2.carbon.device.mgt.common.Device;
+import org.wso2.carbon.device.mgt.common.DeviceIdentifier;
+import org.wso2.carbon.device.mgt.common.DeviceManagementException;
+import org.wso2.carbon.device.mgt.common.EnrolmentInfo;
+import org.wso2.carbon.device.mgt.common.FeatureManager;
+import org.wso2.carbon.device.mgt.common.InvalidDeviceException;
+import org.wso2.carbon.device.mgt.common.PaginationRequest;
+import org.wso2.carbon.device.mgt.common.PaginationResult;
 import org.wso2.carbon.device.mgt.common.configuration.mgt.PlatformConfiguration;
 import org.wso2.carbon.device.mgt.common.license.mgt.License;
 import org.wso2.carbon.device.mgt.common.operation.mgt.Activity;
 import org.wso2.carbon.device.mgt.common.operation.mgt.Operation;
 import org.wso2.carbon.device.mgt.common.operation.mgt.OperationManagementException;
-import org.wso2.carbon.device.mgt.core.dto.DeviceType;
 
 import java.util.List;
 
@@ -248,6 +254,8 @@ public interface DeviceManagementProviderService {
     Operation getOperation(String type, int operationId) throws OperationManagementException;
 
     Activity getOperationByActivityId(String activity) throws OperationManagementException;
+
+    List<Activity> getOperationByActivityIds(List<String> idList) throws OperationManagementException;
 
     List<Activity> getActivitiesUpdatedAfter(long timestamp) throws OperationManagementException;
 

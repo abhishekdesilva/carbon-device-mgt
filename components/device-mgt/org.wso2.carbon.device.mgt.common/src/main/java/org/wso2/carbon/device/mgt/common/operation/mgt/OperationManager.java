@@ -85,6 +85,8 @@ public interface OperationManager {
 
     Activity getOperationByActivityId(String activity) throws OperationManagementException;
 
+    List<Activity> getOperationByActivityIds(List<String> idList) throws OperationManagementException;
+
     List<Operation> getOperationUpdatedAfter(long timestamp) throws OperationManagementException;
 
     List<Activity> getActivitiesUpdatedAfter(long timestamp) throws OperationManagementException;
