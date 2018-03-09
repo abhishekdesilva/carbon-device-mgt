@@ -18,14 +18,26 @@
  */
 package org.wso2.carbon.device.mgt.jaxrs.service.api;
 
-import io.swagger.annotations.*;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.ResponseHeader;
 import org.wso2.carbon.apimgt.annotations.api.API;
 import org.wso2.carbon.apimgt.annotations.api.Permission;
 import org.wso2.carbon.device.mgt.common.operation.mgt.Activity;
 import org.wso2.carbon.device.mgt.jaxrs.beans.ActivityList;
 import org.wso2.carbon.device.mgt.jaxrs.beans.ErrorResponse;
+import org.wso2.carbon.device.mgt.jaxrs.common.ActivityIdList;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -107,6 +119,64 @@ public interface ActivityInfoProviderService {
                     required = false)
             @HeaderParam("If-Modified-Since") String ifModifiedSince);
 
+
+    @GET
+    @Path("/ids")
+    @ApiOperation(
+            produces = MediaType.APPLICATION_JSON,
+            httpMethod = "GET",
+            value = "Getting Details of activities for given set of activity/operation Ids",
+            notes = "Retrieve the details of specific activity/operation Ids, such as the meta information of " +
+                    "an operation, including the responses from the devices.",
+            tags = "Activity Info Provider")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    code = 200,
+                    message = "OK. \n Activity details are successfully fetched",
+                    response = Activity.class,
+                    responseHeaders = {
+                            @ResponseHeader(
+                                    name = "Content-Type",
+                                    description = "The content type of the body"),
+                            @ResponseHeader(
+                                    name = "ETag",
+                                    description = "Entity Tag of the response resource.\n" +
+                                            "Used by caches, or in conditional requests."),
+                            @ResponseHeader(
+                                    name = "Last-Modified",
+                                    description = "Date and time the resource has been modified the last time.\n" +
+                                            "Used by caches, or in conditional requests."),
+                    }),
+
+            @ApiResponse(
+                    code = 400,
+                    message = "Bad Request. \n Activity Ids shouldn't be empty.",
+                    response = ErrorResponse.class),
+            @ApiResponse(
+                    code = 401,
+                    message = "Unauthorized. \n Unauthorized request."),
+            @ApiResponse(
+                    code = 404,
+                    message = "Not Found. \n No activity found with the given IDs.",
+                    response = ErrorResponse.class),
+            @ApiResponse(
+                    code = 406,
+                    message = "Not Acceptable.\n The requested media type is not supported"),
+            @ApiResponse(
+                    code = 500,
+                    message = "Internal Server Error. \n ErrorResponse occurred while fetching the activity.",
+                    response = ErrorResponse.class)
+    })
+    @Permission(
+            scope = "activity-view",
+            permissions = {"/permission/admin/device-mgt/admin/activities/view"}
+    )
+    Response getActivities(
+            @ApiParam(
+                    name = "ids",
+                    value = "Comma separated activity/operation ids.",
+                    required = true)
+            @QueryParam("ids") ActivityIdList activityIdList);
 
     @GET
     @ApiOperation(
