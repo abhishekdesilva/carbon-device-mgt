@@ -47,10 +47,7 @@ import org.wso2.carbon.device.mgt.core.task.impl.DeviceTaskManagerImpl;
 import org.wso2.carbon.device.mgt.core.util.DeviceManagerUtil;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * This class implements all the functionality exposed as part of the OperationManager. Any transaction initiated
@@ -115,11 +112,10 @@ public class OperationManagerImpl implements OperationManager {
                 OperationManagementDAOFactory.beginTransaction();
                 org.wso2.carbon.device.mgt.core.dto.operation.mgt.Operation operationDto =
                         OperationDAOUtil.convertOperation(operation);
-                int operationId = this.lookupOperationDAO(operation).addOperation(operationDto);
                 boolean isScheduledOperation = this.isTaskScheduledOperation(operation);
                 boolean isNotRepeated = false;
-                boolean hasExistingTaskOperation;
                 int enrolmentId;
+                Map<String,String> deviceIdActivityMap = new HashMap<>();
                 if (operationDto.getControl() ==
                     org.wso2.carbon.device.mgt.core.dto.operation.mgt.Operation.Control.NO_REPEAT) {
                     isNotRepeated = true;
@@ -132,17 +128,25 @@ public class OperationManagerImpl implements OperationManager {
                     enrolmentId = device.getEnrolmentInfo().getId();
                     //Do not repeat the task operations
                     if (isScheduledOperation) {
-                        hasExistingTaskOperation = operationDAO.updateTaskOperation(enrolmentId, operationCode);
-                        if (!hasExistingTaskOperation) {
+                        String existingOperationId = operationDAO.hasExistingOperations(enrolmentId, operationCode);
+                        if (!existingOperationId.equals("")) {
+                            deviceIdActivityMap.put(deviceId.getId(), DeviceManagementConstants.OperationAttributes.ACTIVITY + existingOperationId);
+                        }else{
+                            int operationId = this.lookupOperationDAO(operation).addOperation(operationDto);
                             operationMappingDAO.addOperationMapping(operationId, enrolmentId);
+                            deviceIdActivityMap.put(deviceId.getId(),DeviceManagementConstants.OperationAttributes.ACTIVITY + operationId);
                         }
                     } else if (isNotRepeated) {
+                        int operationId = this.lookupOperationDAO(operation).addOperation(operationDto);
                         operationDAO.updateEnrollmentOperationsStatus(enrolmentId, operationCode,
                                                                       org.wso2.carbon.device.mgt.core.dto.operation.mgt.Operation.Status.PENDING,
                                                                       org.wso2.carbon.device.mgt.core.dto.operation.mgt.Operation.Status.REPEATED);
                         operationMappingDAO.addOperationMapping(operationId, enrolmentId);
+                        deviceIdActivityMap.put(deviceId.getId(),DeviceManagementConstants.OperationAttributes.ACTIVITY + operationId);
                     } else {
+                        int operationId = this.lookupOperationDAO(operation).addOperation(operationDto);
                         operationMappingDAO.addOperationMapping(operationId, enrolmentId);
+                        deviceIdActivityMap.put(deviceId.getId(),DeviceManagementConstants.OperationAttributes.ACTIVITY + operationId);
                     }
                     if (notificationStrategy != null) {
                         try {
@@ -157,7 +161,7 @@ public class OperationManagerImpl implements OperationManager {
 
                 OperationManagementDAOFactory.commitTransaction();
                 Activity activity = new Activity();
-                activity.setActivityId(DeviceManagementConstants.OperationAttributes.ACTIVITY + operationId);
+                activity.setActivityId(deviceIdActivityMap.get(deviceIds.get(0).getId()));
                 activity.setCode(operationCode);
                 activity.setCreatedTimeStamp(new Date().toString());
                 activity.setType(Activity.Type.valueOf(operationDto.getType().toString()));
