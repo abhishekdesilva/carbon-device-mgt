@@ -47,7 +47,11 @@ import org.wso2.carbon.device.mgt.core.task.impl.DeviceTaskManagerImpl;
 import org.wso2.carbon.device.mgt.core.util.DeviceManagerUtil;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.HashMap;
 
 /**
  * This class implements all the functionality exposed as part of the OperationManager. Any transaction initiated
@@ -115,7 +119,7 @@ public class OperationManagerImpl implements OperationManager {
                 boolean isScheduledOperation = this.isTaskScheduledOperation(operation);
                 boolean isNotRepeated = false;
                 int enrolmentId;
-                Map<String,String> deviceIdActivityMap = new HashMap<>();
+                HashMap<String,String> deviceIdActivityMap = new HashMap<>();
                 if (operationDto.getControl() ==
                     org.wso2.carbon.device.mgt.core.dto.operation.mgt.Operation.Control.NO_REPEAT) {
                     isNotRepeated = true;
@@ -129,7 +133,7 @@ public class OperationManagerImpl implements OperationManager {
                     //Do not repeat the task operations
                     if (isScheduledOperation) {
                         String existingOperationId = operationDAO.hasExistingOperations(enrolmentId, operationCode);
-                        if (!existingOperationId.equals("")) {
+                        if (existingOperationId!=null && !existingOperationId.equals("")) {
                             deviceIdActivityMap.put(deviceId.getId(), DeviceManagementConstants.OperationAttributes.ACTIVITY + existingOperationId);
                         }else{
                             int operationId = this.lookupOperationDAO(operation).addOperation(operationDto);

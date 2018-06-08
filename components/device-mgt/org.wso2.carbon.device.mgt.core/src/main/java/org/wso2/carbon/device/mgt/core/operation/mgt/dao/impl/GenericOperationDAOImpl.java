@@ -188,7 +188,7 @@ public class GenericOperationDAOImpl implements OperationDAO {
             throws OperationManagementDAOException {
         PreparedStatement stmt = null;
         ResultSet rs = null;
-        String result = "";
+        String result = null;
         try {
             Connection connection = OperationManagementDAOFactory.getConnection();
             String query = "SELECT EOM.ID, EOM.OPERATION_ID FROM DM_ENROLMENT_OP_MAPPING AS EOM INNER JOIN DM_OPERATION DM " +
