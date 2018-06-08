@@ -94,7 +94,7 @@ public class OperationManagerImpl implements OperationManager {
             log.debug("operation:[" + operation.toString() + "]");
             for (DeviceIdentifier deviceIdentifier : deviceIds) {
                 log.debug("device identifier id:[" + deviceIdentifier.getId() + "] type:[" +
-                          deviceIdentifier.getType() + "]");
+                        deviceIdentifier.getType() + "]");
             }
         }
         try {
@@ -109,7 +109,7 @@ public class OperationManagerImpl implements OperationManager {
                     //Send the operation statuses only for admin triggered operations
                     String deviceType = validDeviceIds.get(0).getType();
                     activity.setActivityStatus(this.getActivityStatus(deviceValidationResult, deviceAuthorizationResult,
-                                                                      deviceType));
+                            deviceType));
                     return activity;
                 }
 
@@ -119,9 +119,9 @@ public class OperationManagerImpl implements OperationManager {
                 boolean isScheduledOperation = this.isTaskScheduledOperation(operation);
                 boolean isNotRepeated = false;
                 int enrolmentId;
-                HashMap<String,String> deviceIdActivityMap = new HashMap<>();
+                HashMap<String, String> deviceIdActivityMap = new HashMap<>();
                 if (operationDto.getControl() ==
-                    org.wso2.carbon.device.mgt.core.dto.operation.mgt.Operation.Control.NO_REPEAT) {
+                        org.wso2.carbon.device.mgt.core.dto.operation.mgt.Operation.Control.NO_REPEAT) {
                     isNotRepeated = true;
                 }
 
@@ -133,32 +133,36 @@ public class OperationManagerImpl implements OperationManager {
                     //Do not repeat the task operations
                     if (isScheduledOperation) {
                         String existingOperationId = operationDAO.hasExistingOperations(enrolmentId, operationCode);
-                        if (existingOperationId!=null && !existingOperationId.equals("")) {
-                            deviceIdActivityMap.put(deviceId.getId(), DeviceManagementConstants.OperationAttributes.ACTIVITY + existingOperationId);
-                        }else{
+                        if (existingOperationId != null && !existingOperationId.equals("")) {
+                            deviceIdActivityMap.put(deviceId.getId(), DeviceManagementConstants.OperationAttributes.ACTIVITY
+                                    + existingOperationId);
+                        } else {
                             int operationId = this.lookupOperationDAO(operation).addOperation(operationDto);
                             operationMappingDAO.addOperationMapping(operationId, enrolmentId);
-                            deviceIdActivityMap.put(deviceId.getId(),DeviceManagementConstants.OperationAttributes.ACTIVITY + operationId);
+                            deviceIdActivityMap.put(deviceId.getId(), DeviceManagementConstants.OperationAttributes.ACTIVITY
+                                    + operationId);
                         }
                     } else if (isNotRepeated) {
                         int operationId = this.lookupOperationDAO(operation).addOperation(operationDto);
                         operationDAO.updateEnrollmentOperationsStatus(enrolmentId, operationCode,
-                                                                      org.wso2.carbon.device.mgt.core.dto.operation.mgt.Operation.Status.PENDING,
-                                                                      org.wso2.carbon.device.mgt.core.dto.operation.mgt.Operation.Status.REPEATED);
+                                org.wso2.carbon.device.mgt.core.dto.operation.mgt.Operation.Status.PENDING,
+                                org.wso2.carbon.device.mgt.core.dto.operation.mgt.Operation.Status.REPEATED);
                         operationMappingDAO.addOperationMapping(operationId, enrolmentId);
-                        deviceIdActivityMap.put(deviceId.getId(),DeviceManagementConstants.OperationAttributes.ACTIVITY + operationId);
+                        deviceIdActivityMap.put(deviceId.getId(), DeviceManagementConstants.OperationAttributes.ACTIVITY
+                                + operationId);
                     } else {
                         int operationId = this.lookupOperationDAO(operation).addOperation(operationDto);
                         operationMappingDAO.addOperationMapping(operationId, enrolmentId);
-                        deviceIdActivityMap.put(deviceId.getId(),DeviceManagementConstants.OperationAttributes.ACTIVITY + operationId);
+                        deviceIdActivityMap.put(deviceId.getId(), DeviceManagementConstants.OperationAttributes.ACTIVITY
+                                + operationId);
                     }
                     if (notificationStrategy != null) {
                         try {
                             notificationStrategy.execute(new NotificationContext(deviceId, operation));
                         } catch (PushNotificationExecutionFailedException e) {
                             log.error("Error occurred while sending push notifications to " +
-                                      deviceId.getType() + " device carrying id '" +
-                                      deviceId + "'", e);
+                                    deviceId.getType() + " device carrying id '" +
+                                    deviceId + "'", e);
                         }
                     }
                 }

@@ -192,8 +192,8 @@ public class GenericOperationDAOImpl implements OperationDAO {
         try {
             Connection connection = OperationManagementDAOFactory.getConnection();
             String query = "SELECT EOM.ID, EOM.OPERATION_ID FROM DM_ENROLMENT_OP_MAPPING AS EOM INNER JOIN DM_OPERATION DM " +
-                           "ON DM.ID = EOM.OPERATION_ID WHERE EOM.ENROLMENT_ID = ? AND DM.OPERATION_CODE = ? AND " +
-                           "EOM.STATUS = ?;";
+                    "ON DM.ID = EOM.OPERATION_ID WHERE EOM.ENROLMENT_ID = ? AND DM.OPERATION_CODE = ? AND " +
+                    "EOM.STATUS = ?;";
             stmt = connection.prepareStatement(query);
             stmt.setInt(1, enrolmentId);
             stmt.setString(2, operationCode);
@@ -205,7 +205,7 @@ public class GenericOperationDAOImpl implements OperationDAO {
             }
         } catch (SQLException e) {
             throw new OperationManagementDAOException("Error occurred while update device mapping operation status " +
-                                                      "metadata", e);
+                    "metadata", e);
         } finally {
             OperationManagementDAOUtil.cleanupResources(stmt, rs);
         }
