@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.device.mgt.common.TransactionManagementException;
 import org.wso2.carbon.device.mgt.core.archival.dao.*;
+import org.wso2.carbon.device.mgt.core.config.DeviceConfigurationManager;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -36,7 +37,9 @@ public class ArchivalServiceImpl implements ArchivalService {
     private ArchivalDAO archivalDAO;
     private DataDeletionDAO dataDeletionDAO;
 
-    private static int ITERATION_COUNT = 10000;
+    private static int ITERATION_COUNT =
+            DeviceConfigurationManager.getInstance().getDeviceManagementConfig().getArchivalConfiguration()
+                    .getArchivalTaskConfiguration().getBatchSize();
 
     private String[] NOT_IN_PROGRESS_OPS = new String[]{"COMPLETED", "ERROR", "REPEATED"};
     private String[] NOT_PENDING_OPS = new String[]{"COMPLETED", "ERROR", "REPEATED", "IN_PROGRESS"};
@@ -49,42 +52,70 @@ public class ArchivalServiceImpl implements ArchivalService {
 
     @Override
     public void archiveTransactionalRecords() throws ArchivalException {
+        List<Integer> allOperations;
+        List<Integer> pendingAndIPOperations;
         try {
             ArchivalSourceDAOFactory.openConnection();
             ArchivalDestinationDAOFactory.openConnection();
 
-            List<Integer> allOperations = archivalDAO.getAllOperations();
-            List<Integer> pendingAndIPOperations = archivalDAO.getPendingAndInProgressOperations();
+            allOperations = archivalDAO.getAllOperations();
+            pendingAndIPOperations = archivalDAO.getPendingAndInProgressOperations();
 
-            log.info(allOperations.size() + " All Operations. " + pendingAndIPOperations.size() +
-                    " P&IP Operations");
-            //Get the diff of operations
-            Set<Integer> setA = new HashSet<>(allOperations);
-            Set<Integer> setB = new HashSet<>(pendingAndIPOperations);
-            setA.removeAll(setB);
+        } catch (ArchivalDAOException e) {
+            rollbackTransactions();
+            throw new ArchivalException("An error occurred while data archival", e);
+        } catch (SQLException e) {
+            throw new ArchivalException("An error occurred while connecting to the archival database.", e);
+        } finally {
+            ArchivalSourceDAOFactory.closeConnection();
+            ArchivalDestinationDAOFactory.closeConnection();
+        }
 
-            List<Integer> candidates = new ArrayList<>();
-            candidates.addAll(setA);
+        log.info(allOperations.size() + " All Operations. " + pendingAndIPOperations.size() +
+                " P&IP Operations");
+        //Get the diff of operations
+        Set<Integer> setA = new HashSet<>(allOperations);
+        Set<Integer> setB = new HashSet<>(pendingAndIPOperations);
+        setA.removeAll(setB);
 
-            int total = candidates.size();
-            int batches = calculateNumberOfBatches(total);
-            int batchSize = ITERATION_COUNT;
-            if (log.isDebugEnabled()) {
-                log.debug(total + " Operations ready for archiving. " + batches + " iterations to be done.");
-            }
+        List<Integer> candidates = new ArrayList<>();
+        candidates.addAll(setA);
 
-            beginTransactions();
-            for (int i = 1; i <= batches; i++) {
+        int total = candidates.size();
+        int batches = calculateNumberOfBatches(total);
+        int batchSize = ITERATION_COUNT;
+        if (log.isDebugEnabled()) {
+            log.debug(total + " Operations ready for archiving. " + batches + " iterations to be done.");
+            log.debug(batchSize + " is the batch size");
+        }
+
+        for (int i = 1; i <= batches; i++) {
+            try {
+                beginTransactions();
                 int startIdx = batchSize * (i - 1);
                 int endIdx = batchSize * i;
                 if (i == batches) {
                     endIdx = startIdx + (total % batchSize);
                 }
-                if(log.isDebugEnabled()) {
+                if (log.isDebugEnabled()) {
                     log.debug("\n\n############ Iterating over batch " + i + "[" +
                             startIdx + "," + endIdx + "] #######");
                 }
                 List<Integer> subList = candidates.subList(startIdx, endIdx);
+
+                log.info("SubList size is: "+subList.size());
+                if (subList.size() > 0) {
+                    log.info("First Element is: "+subList.get(0));
+                    log.info("Last Element is: "+subList.get(subList.size() - 1));
+                }
+
+                /* if (log.isDebugEnabled()) {
+                    log.debug("SubList size is: "+subList.size());
+                    if (subList.size() > 0) {
+                        log.debug("First Element is: "+subList.get(0));
+                        log.debug("Last Element is: "+subList.get(subList.size() - 1));
+                    }
+                }*/
                 prepareTempTable(subList);
 
                 //Purge the largest table, DM_DEVICE_OPERATION_RESPONSE
@@ -122,16 +153,15 @@ public class ArchivalServiceImpl implements ArchivalService {
                     log.debug("## Purging operations");
                 }
                 archivalDAO.moveOperations();
+                commitTransactions();
+                log.info("End of Iteration : "+i);
+            } catch (ArchivalDAOException e) {
+                rollbackTransactions();
+                throw new ArchivalException("An error occurred while data archival", e);
+            } finally {
+                ArchivalSourceDAOFactory.closeConnection();
+                ArchivalDestinationDAOFactory.closeConnection();
             }
-            commitTransactions();
-        } catch (ArchivalDAOException e) {
-            rollbackTransactions();
-            throw new ArchivalException("An error occurred while data archival", e);
-        } catch (SQLException e) {
-            throw new ArchivalException("An error occurred while connecting to the archival database.", e);
-        } finally {
-            ArchivalSourceDAOFactory.closeConnection();
-            ArchivalDestinationDAOFactory.closeConnection();
         }
     }
 

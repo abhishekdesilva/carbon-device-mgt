@@ -158,7 +158,7 @@ public class ArchivalDAOImpl implements ArchivalDAO {
                 if (++count % batchSize == 0) {
                     stmt2.executeBatch();
                     if (log.isDebugEnabled()) {
-                        log.debug("Executing batch " + count);
+                        log.debug("Executing Operation Responses batch " + count);
                     }
                 }
             }
@@ -214,6 +214,9 @@ public class ArchivalDAOImpl implements ArchivalDAO {
 
                 if (++count % batchSize == 0) {
                     stmt2.executeBatch();
+                    if (log.isDebugEnabled()) {
+                        log.debug("Executing Notifications batch " + count);
+                    }
                 }
             }
             stmt2.executeBatch();
@@ -264,6 +267,9 @@ public class ArchivalDAOImpl implements ArchivalDAO {
 
                 if (++count % batchSize == 0) {
                     stmt2.executeBatch();
+                    if (log.isDebugEnabled()) {
+                        log.debug("Executing Command Operations batch " + count);
+                    }
                 }
             }
             stmt2.executeBatch();
@@ -314,6 +320,9 @@ public class ArchivalDAOImpl implements ArchivalDAO {
 
                 if (++count % batchSize == 0) {
                     stmt2.executeBatch();
+                    if (log.isDebugEnabled()) {
+                        log.debug("Executing Profile Operations batch " + count);
+                    }
                 }
             }
             stmt2.executeBatch();
@@ -368,7 +377,7 @@ public class ArchivalDAOImpl implements ArchivalDAO {
                 if (++count % batchSize == 0) {
                     stmt2.executeBatch();
                     if (log.isDebugEnabled()) {
-                        log.debug("Executing batch " + count);
+                        log.debug("Executing Enrolment Mappings batch " + count);
                     }
                 }
             }
@@ -420,6 +429,9 @@ public class ArchivalDAOImpl implements ArchivalDAO {
 
                 if (++count % batchSize == 0) {
                     stmt2.executeBatch();
+                    if (log.isDebugEnabled()) {
+                        log.debug("Final Execution of Operations batch " + count);
+                    }
                 }
             }
             stmt2.executeBatch();
