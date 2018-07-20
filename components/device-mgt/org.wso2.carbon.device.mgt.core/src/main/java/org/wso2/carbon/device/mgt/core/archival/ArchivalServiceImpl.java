@@ -58,14 +58,25 @@ public class ArchivalServiceImpl implements ArchivalService {
             ArchivalSourceDAOFactory.openConnection();
             ArchivalDestinationDAOFactory.openConnection();
 
+            if (log.isDebugEnabled()) {
+                log.debug("Fetching All Operations");
+            }
             allOperations = archivalDAO.getAllOperations();
+
+            if (log.isDebugEnabled()) {
+                log.debug("Fetching All Pending Operations");
+            }
             pendingAndIPOperations = archivalDAO.getPendingAndInProgressOperations();
 
         } catch (ArchivalDAOException e) {
             rollbackTransactions();
-            throw new ArchivalException("An error occurred while data archival", e);
+            String msg = "Rollback the get all operations and get all pending operations";
+            log.error(msg, e);
+            throw new ArchivalException(msg, e);
         } catch (SQLException e) {
-            throw new ArchivalException("An error occurred while connecting to the archival database.", e);
+            String msg = "An error occurred while connecting to the archival database";
+            log.error(msg, e);
+            throw new ArchivalException(msg, e);
         } finally {
             ArchivalSourceDAOFactory.closeConnection();
             ArchivalDestinationDAOFactory.closeConnection();
@@ -90,74 +101,79 @@ public class ArchivalServiceImpl implements ArchivalService {
         }
 
         for (int i = 1; i <= batches; i++) {
-            try {
-                beginTransactions();
-                int startIdx = batchSize * (i - 1);
-                int endIdx = batchSize * i;
-                if (i == batches) {
-                    endIdx = startIdx + (total % batchSize);
-                }
-                if (log.isDebugEnabled()) {
-                    log.debug("\n\n############ Iterating over batch " + i + "[" +
-                            startIdx + "," + endIdx + "] #######");
-                }
-                List<Integer> subList = candidates.subList(startIdx, endIdx);
+            int startIdx = batchSize * (i - 1);
+            int endIdx = batchSize * i;
+            if (i == batches) {
+                endIdx = startIdx + (total % batchSize);
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("\n\n############ Iterating over batch " + i + "[" +
+                        startIdx + "," + endIdx + "] #######");
+            }
+            List<Integer> subList = candidates.subList(startIdx, endIdx);
 
-                log.info("SubList size is: "+subList.size());
-                if (subList.size() > 0) {
-                    log.info("First Element is: "+subList.get(0));
-                    log.info("Last Element is: "+subList.get(subList.size() - 1));
-                }
+            log.info("SubList size is: " + subList.size());
+            if (subList.size() > 0) {
+                log.info("First Element is: " + subList.get(0));
+                log.info("Last Element is: " + subList.get(subList.size() - 1));
+            }
 
-                /* if (log.isDebugEnabled()) {
-                    log.debug("SubList size is: "+subList.size());
-                    if (subList.size() > 0) {
-                        log.debug("First Element is: "+subList.get(0));
-                        log.debug("Last Element is: "+subList.get(subList.size() - 1));
+            if (log.isDebugEnabled()) {
+                for(Integer val : subList){
+                    if (log.isDebugEnabled()) {
+                        log.debug("Sub List Element: "+val);
                     }
-                }*/
+                }
+            }
+
+            beginTransactions();
+
+
+            try {
                 prepareTempTable(subList);
 
                 //Purge the largest table, DM_DEVICE_OPERATION_RESPONSE
                 if (log.isDebugEnabled()) {
-                    log.debug("## Purging operation responses");
+                    log.debug("## Archiving operation responses");
                 }
                 archivalDAO.moveOperationResponses();
 
                 //Purge the notifications table, DM_NOTIFICATION
                 if (log.isDebugEnabled()) {
-                    log.debug("## Purging notifications");
+                    log.debug("## Archiving notifications");
                 }
                 archivalDAO.moveNotifications();
 
                 //Purge the command operations table, DM_COMMAND_OPERATION
                 if (log.isDebugEnabled()) {
-                    log.debug("## Purging command operations");
+                    log.debug("## Archiving command operations");
                 }
                 archivalDAO.moveCommandOperations();
 
                 //Purge the profile operation table, DM_PROFILE_OPERATION
                 if (log.isDebugEnabled()) {
-                    log.debug("## Purging profile operations");
+                    log.debug("## Archiving profile operations");
                 }
                 archivalDAO.moveProfileOperations();
 
                 //Purge the enrolment mappings table, DM_ENROLMENT_OP_MAPPING
                 if (log.isDebugEnabled()) {
-                    log.debug("## Purging enrolment mappings");
+                    log.debug("## Archiving enrolment mappings");
                 }
                 archivalDAO.moveEnrolmentMappings();
 
                 //Finally, purge the operations table, DM_OPERATION
                 if (log.isDebugEnabled()) {
-                    log.debug("## Purging operations");
+                    log.debug("## Archiving operations");
                 }
                 archivalDAO.moveOperations();
                 commitTransactions();
-                log.info("End of Iteration : "+i);
+                log.info("End of Iteration : " + i);
             } catch (ArchivalDAOException e) {
                 rollbackTransactions();
-                throw new ArchivalException("An error occurred while data archival", e);
+                String msg = "Error occurred while trying to archive data to the six tables";
+                log.error(msg, e);
+                throw new ArchivalException(msg, e);
             } finally {
                 ArchivalSourceDAOFactory.closeConnection();
                 ArchivalDestinationDAOFactory.closeConnection();
@@ -171,6 +187,9 @@ public class ArchivalServiceImpl implements ArchivalService {
             log.debug("## Truncating the temporary table");
         }
         archivalDAO.truncateOperationIDsForArchival();
+        if (log.isDebugEnabled()) {
+            log.debug("## Inserting into the temporary table");
+        }
         archivalDAO.copyOperationIDsForArchival(subList);
     }
 
