@@ -22,9 +22,11 @@ package org.wso2.carbon.device.mgt.core.archival;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.device.mgt.common.TransactionManagementException;
+import org.wso2.carbon.device.mgt.core.archival.beans.*;
 import org.wso2.carbon.device.mgt.core.archival.dao.*;
 import org.wso2.carbon.device.mgt.core.config.DeviceConfigurationManager;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -69,7 +71,7 @@ public class ArchivalServiceImpl implements ArchivalService {
             pendingAndIPOperations = archivalDAO.getPendingAndInProgressOperations();
 
         } catch (ArchivalDAOException e) {
-            rollbackTransactions();
+//            rollbackTransactions();
             String msg = "Rollback the get all operations and get all pending operations";
             log.error(msg, e);
             throw new ArchivalException(msg, e);
@@ -119,54 +121,89 @@ public class ArchivalServiceImpl implements ArchivalService {
             }
 
             if (log.isDebugEnabled()) {
-                for(Integer val : subList){
+                for (Integer val : subList) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Sub List Element: "+val);
+                        log.debug("Sub List Element: " + val);
                     }
                 }
             }
 
-            beginTransactions();
+            try {
+                beginTransactions();
+                prepareTempTable(subList);
+                commitTransactions();
+            } catch (Exception e) {
+                rollbackTransactions();
+                String msg = "Error occurred while preparing the operations.";
+                log.error(msg, e);
+                throw new ArchivalException(msg, e);
+            } finally {
+                ArchivalSourceDAOFactory.closeConnection();
+                ArchivalDestinationDAOFactory.closeConnection();
+            }
 
+            List<ArchiveOperationResponse> operationResponses = null;
+            List<ArchiveNotification> notification = null;
+            List<ArchiveCommandOperation> commandOperations = null;
+            List<ArchiveProfileOperation> profileOperations = null;
+            List<ArchiveEnrolmentOperationMap> enrollmentMapping = null;
+            List<ArchiveOperation> operations = null;
 
             try {
-                prepareTempTable(subList);
+                openConnection();
+                operationResponses = archivalDAO.selectOperationResponses();
+                notification = archivalDAO.selectNotifications();
+                commandOperations = archivalDAO.selectCommandOperations();
+                profileOperations = archivalDAO.selectProfileOperations();
+                enrollmentMapping = archivalDAO.selectEnrolmentMappings();
+                operations = archivalDAO.selectOperations();
+
+            } catch (Exception e) {
+                String msg = "Error occurred while retrieving data.";
+                log.error(msg, e);
+                throw new ArchivalException(msg, e);
+            } finally {
+                closeConnection();
+            }
+
+            try {
+                beginTransactions();
 
                 //Purge the largest table, DM_DEVICE_OPERATION_RESPONSE
                 if (log.isDebugEnabled()) {
                     log.debug("## Archiving operation responses");
                 }
-                archivalDAO.moveOperationResponses();
+                archivalDAO.moveOperationResponses(operationResponses);
 
                 //Purge the notifications table, DM_NOTIFICATION
                 if (log.isDebugEnabled()) {
                     log.debug("## Archiving notifications");
                 }
-                archivalDAO.moveNotifications();
+                archivalDAO.moveNotifications(notification);
 
                 //Purge the command operations table, DM_COMMAND_OPERATION
                 if (log.isDebugEnabled()) {
                     log.debug("## Archiving command operations");
                 }
-                archivalDAO.moveCommandOperations();
+                archivalDAO.moveCommandOperations(commandOperations);
 
                 //Purge the profile operation table, DM_PROFILE_OPERATION
                 if (log.isDebugEnabled()) {
                     log.debug("## Archiving profile operations");
                 }
-                archivalDAO.moveProfileOperations();
+                archivalDAO.moveProfileOperations(profileOperations);
 
                 //Purge the enrolment mappings table, DM_ENROLMENT_OP_MAPPING
                 if (log.isDebugEnabled()) {
                     log.debug("## Archiving enrolment mappings");
                 }
-                archivalDAO.moveEnrolmentMappings();
+                archivalDAO.moveEnrolmentMappings(enrollmentMapping);
 
                 //Finally, purge the operations table, DM_OPERATION
                 if (log.isDebugEnabled()) {
                     log.debug("## Archiving operations");
                 }
-                archivalDAO.moveOperations();
+                archivalDAO.moveOperations(operations);
                 commitTransactions();
                 log.info("End of Iteration : " + i);
             } catch (ArchivalDAOException e) {
@@ -178,6 +215,7 @@ public class ArchivalServiceImpl implements ArchivalService {
                 ArchivalSourceDAOFactory.closeConnection();
                 ArchivalDestinationDAOFactory.closeConnection();
             }
+
         }
     }
 
@@ -201,6 +239,28 @@ public class ArchivalServiceImpl implements ArchivalService {
             log.error("An error occurred during starting transactions", e);
             throw new ArchivalException("An error occurred during starting transactions", e);
         }
+    }
+
+    private void openConnection() throws ArchivalException {
+        try {
+            ArchivalSourceDAOFactory.openConnection();
+        } catch (SQLException e) {
+            String msg = "An error occurred during opening connection";
+            log.error(msg, e);
+            throw new ArchivalException(msg, e);
+        }
+
+    }
+
+    private void closeConnection() throws ArchivalException {
+        try {
+            ArchivalSourceDAOFactory.closeConnection();
+        } catch (Exception e) {
+            String msg = "An error occurred during opening connection";
+            log.error(msg, e);
+            throw new ArchivalException(msg, e);
+        }
+
     }
 
     private void commitTransactions() {

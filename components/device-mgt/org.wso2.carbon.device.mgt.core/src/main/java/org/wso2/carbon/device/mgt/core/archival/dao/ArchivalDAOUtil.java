@@ -58,4 +58,14 @@ public class ArchivalDAOUtil {
         }
     }
 
+
+    public static void cleanupResultSet(ResultSet rs) {
+        if (rs != null) {
+            try {
+                rs.close();
+            } catch (SQLException e) {
+                log.warn("Error occurred while closing the result set", e);
+            }
+        }
+    }
 }
