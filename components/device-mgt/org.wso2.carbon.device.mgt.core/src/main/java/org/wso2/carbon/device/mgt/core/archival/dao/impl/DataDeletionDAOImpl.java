@@ -53,8 +53,6 @@ public class DataDeletionDAOImpl implements DataDeletionDAO {
                     "WHERE ARCHIVED_AT < DATE_SUB(NOW(), INTERVAL ? DAY)";
             stmt = conn.prepareStatement(sql);
             stmt.setInt(1, this.retentionPeriod);
-//            stmt.addBatch();
-//            stmt.executeBatch();
             stmt.executeUpdate();
             conn.commit();
         } catch (SQLException e) {
@@ -74,8 +72,6 @@ public class DataDeletionDAOImpl implements DataDeletionDAO {
                     "  WHERE ARCHIVED_AT < DATE_SUB(NOW(), INTERVAL ? DAY)";
             stmt = conn.prepareStatement(sql);
             stmt.setInt(1, this.retentionPeriod);
-//            stmt.addBatch();
-//            stmt.executeBatch();
             stmt.executeUpdate();
             conn.commit();
         } catch (SQLException e) {
@@ -95,8 +91,6 @@ public class DataDeletionDAOImpl implements DataDeletionDAO {
                     "  WHERE ARCHIVED_AT < DATE_SUB(NOW(), INTERVAL ? DAY)";
             stmt = conn.prepareStatement(sql);
             stmt.setInt(1, this.retentionPeriod);
-//            stmt.addBatch();
-//            stmt.executeBatch();
             stmt.executeUpdate();
             conn.commit();
         } catch (SQLException e) {
@@ -116,8 +110,6 @@ public class DataDeletionDAOImpl implements DataDeletionDAO {
                     "  WHERE ARCHIVED_AT < DATE_SUB(NOW(), INTERVAL ? DAY)";
             stmt = conn.prepareStatement(sql);
             stmt.setInt(1, this.retentionPeriod);
-//            stmt.addBatch();
-//            stmt.executeBatch();
             stmt.executeUpdate();
             conn.commit();
         } catch (SQLException e) {
@@ -136,8 +128,6 @@ public class DataDeletionDAOImpl implements DataDeletionDAO {
             String sql = "DELETE FROM DM_ENROLMENT_OP_MAPPING_ARCH WHERE ARCHIVED_AT < DATE_SUB(NOW(), INTERVAL ? DAY)";
             stmt = conn.prepareStatement(sql);
             stmt.setInt(1, this.retentionPeriod);
-//            stmt.addBatch();
-//            stmt.executeBatch();
             stmt.executeUpdate();
             conn.commit();
         } catch (SQLException e) {
@@ -156,8 +146,6 @@ public class DataDeletionDAOImpl implements DataDeletionDAO {
             String sql = "DELETE FROM DM_OPERATION_ARCH WHERE ARCHIVED_AT < DATE_SUB(NOW(), INTERVAL ? DAY)";
             stmt = conn.prepareStatement(sql);
             stmt.setInt(1, this.retentionPeriod);
-//            stmt.addBatch();
-//            stmt.executeBatch();
             stmt.executeUpdate();
             conn.commit();
         } catch (SQLException e) {

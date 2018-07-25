@@ -113,7 +113,7 @@ public class ArchivalServiceImpl implements ArchivalService {
             }
             List<Integer> subList = candidates.subList(startIdx, endIdx);
 
-            if (log.isDebugEnabled()){
+            if (log.isDebugEnabled()) {
                 log.debug("SubList size is: " + subList.size());
                 if (subList.size() > 0) {
                     log.debug("First Element is: " + subList.get(0));
