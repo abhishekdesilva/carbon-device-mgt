@@ -26,7 +26,6 @@ import org.wso2.carbon.device.mgt.core.archival.beans.*;
 import org.wso2.carbon.device.mgt.core.archival.dao.*;
 import org.wso2.carbon.device.mgt.core.config.DeviceConfigurationManager;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -114,10 +113,12 @@ public class ArchivalServiceImpl implements ArchivalService {
             }
             List<Integer> subList = candidates.subList(startIdx, endIdx);
 
-            log.info("SubList size is: " + subList.size());
-            if (subList.size() > 0) {
-                log.info("First Element is: " + subList.get(0));
-                log.info("Last Element is: " + subList.get(subList.size() - 1));
+            if (log.isDebugEnabled()){
+                log.debug("SubList size is: " + subList.size());
+                if (subList.size() > 0) {
+                    log.debug("First Element is: " + subList.get(0));
+                    log.debug("Last Element is: " + subList.get(subList.size() - 1));
+                }
             }
 
             if (log.isDebugEnabled()) {
@@ -205,7 +206,9 @@ public class ArchivalServiceImpl implements ArchivalService {
                 }
                 archivalDAO.moveOperations(operations);
                 commitTransactions();
-                log.info("End of Iteration : " + i);
+                if (log.isDebugEnabled()) {
+                    log.debug("End of Iteration : " + i);
+                }
             } catch (ArchivalDAOException e) {
                 rollbackTransactions();
                 String msg = "Error occurred while trying to archive data to the six tables";
