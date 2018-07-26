@@ -102,6 +102,7 @@ public class OperationManagerImpl implements OperationManager {
             if (validDeviceIds.size() > 0) {
                 DeviceIDHolder deviceAuthorizationResult = this.authorizeDevices(operation, validDeviceIds);
                 List<DeviceIdentifier> authorizedDeviceList = deviceAuthorizationResult.getValidDeviceIDList();
+                List<DeviceIdentifier> pendingDeviceList = new ArrayList<>();
                 if (authorizedDeviceList.size() <= 0) {
                     log.info("User : " + getUser() + " is not authorized to perform operations on given device-list.");
                     Activity activity = new Activity();
@@ -113,20 +114,44 @@ public class OperationManagerImpl implements OperationManager {
                 }
 
                 OperationManagementDAOFactory.beginTransaction();
+                int enrolmentId;
+                boolean hasExistingTaskOperation;
                 org.wso2.carbon.device.mgt.core.dto.operation.mgt.Operation operationDto =
                         OperationDAOUtil.convertOperation(operation);
+                //TODO have to create a sql to load device details from deviceDAO using single query.
+                String operationCode = operationDto.getCode();
+
+                for (DeviceIdentifier deviceId : authorizedDeviceList) {
+                    Device device = getDevice(deviceId);
+                    enrolmentId = device.getEnrolmentInfo().getId();
+                    hasExistingTaskOperation = operationDAO.updateTaskOperation(enrolmentId, operationCode);
+                    if(hasExistingTaskOperation){
+                        pendingDeviceList.add(deviceId);
+                    }
+
+                }
+
+                if (authorizedDeviceList.size() == pendingDeviceList.size()) {
+                    log.info("All the devices contain a pending operation for the Operation Code: "+operationCode);
+                    Activity activity = new Activity();
+                    //Send the operation statuses only for admin triggered operations
+                    String deviceType = validDeviceIds.get(0).getType();
+                    activity.setActivityStatus(this.getActivityStatus(deviceValidationResult, deviceAuthorizationResult,
+                            deviceType));
+                    return activity;
+                }
+
+
                 int operationId = this.lookupOperationDAO(operation).addOperation(operationDto);
                 boolean isScheduledOperation = this.isTaskScheduledOperation(operation);
                 boolean isNotRepeated = false;
-                boolean hasExistingTaskOperation;
-                int enrolmentId;
+
+
                 if (operationDto.getControl() ==
                     org.wso2.carbon.device.mgt.core.dto.operation.mgt.Operation.Control.NO_REPEAT) {
                     isNotRepeated = true;
                 }
 
-                //TODO have to create a sql to load device details from deviceDAO using single query.
-                String operationCode = operationDto.getCode();
                 for (DeviceIdentifier deviceId : authorizedDeviceList) {
                     Device device = getDevice(deviceId);
                     enrolmentId = device.getEnrolmentInfo().getId();
